@@ -394,20 +394,41 @@ app.get('/api/student/mistakes', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────
-// Production: Serve built Vite frontend
+// Production: Serve built Vite frontend & SPA fallback
 // ─────────────────────────────────────────────
 const distPath = path.join(__dirname, '..', 'dist');
 
-if (fs.existsSync(distPath)) {
-  app.use(express.static(distPath));
-  // SPA fallback: serve index.html for any non-API route
-  app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api/')) {
-      res.sendFile(path.join(distPath, 'index.html'));
-    }
-  });
-  console.log('[Server] Serving production frontend from dist/');
-}
+app.use(express.static(distPath));
+
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  const indexPath = path.join(distPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(200).send(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>TutorSystem Starting...</title>
+          <meta http-equiv="refresh" content="3">
+          <style>
+            body { font-family: system-ui; display: flex; height: 100vh; align-items: center; justify-content: center; background: #FCFAF8; color: #2D2926; margin: 0; }
+            .card { text-align: center; padding: 2rem; background: #fff; border-radius: 16px; border: 1px solid rgba(232, 122, 144, 0.2); }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <h2>🌸 TutorSystem is compiling...</h2>
+            <p>Please wait a moment. This page will refresh automatically.</p>
+          </div>
+        </body>
+      </html>
+    `);
+  }
+});
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`[TutorSystem Server] Running on http://localhost:${PORT}`);

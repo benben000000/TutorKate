@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { WebSocketProvider } from './context/WebSocketContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { LoginPage } from './components/LoginPage';
 import { Header } from './components/Header';
 import { BottomNavBar } from './components/BottomNavBar';
@@ -80,11 +81,13 @@ const MainApp: React.FC = () => {
 
 export function App() {
   return (
-    <AuthProvider>
-      <LanguageProvider>
-        <MainApp />
-      </LanguageProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <LanguageProvider>
+          <MainApp />
+        </LanguageProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
