@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment & secrets
+.env
+.env.local
+.env.production
+server/firebase-key.json
+
+# Local database (regenerated on server start)
+server/local_db.json
+
+# IDE & OS
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test files
+test_e2e_ws.js
+
+# Course materials (PDF source files - not needed in deployment)
+Anaphy/
+Reading Visual Arts/
