@@ -77,13 +77,59 @@ export const LessonReader: React.FC<LessonReaderProps> = ({ module, onNavigateTo
     }
   };
 
-  // Convert custom markdown formatting to rich mobile-responsive JSX
+  // Parse inline markdown (**bold**, *italic*, `code`) into clean React elements
+  const formatInlineText = (text: string): React.ReactNode => {
+    if (!text) return text;
+    // Regex splits by **bold**, *italic*, `code`
+    const regex = /(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g;
+    const parts = text.split(regex);
+
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return (
+          <strong key={index} style={{ fontWeight: 700, color: 'var(--sumi-ink)' }}>
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      if (part.startsWith('*') && part.endsWith('*')) {
+        return (
+          <em key={index} style={{ fontStyle: 'italic', color: 'var(--hai-slate)' }}>
+            {part.slice(1, -1)}
+          </em>
+        );
+      }
+      if (part.startsWith('`') && part.endsWith('`')) {
+        return (
+          <code
+            key={index}
+            style={{
+              background: 'var(--sakura-soft)',
+              color: 'var(--nadeshiko-dark)',
+              padding: '0.15rem 0.45rem',
+              borderRadius: '4px',
+              fontSize: '0.86em',
+              fontFamily: 'monospace',
+              border: '1px solid var(--sakura-border)'
+            }}
+          >
+            {part.slice(1, -1)}
+          </code>
+        );
+      }
+      return part;
+    });
+  };
+
+  // Convert raw lesson content into clean, modern, mobile-responsive JSX
   const renderFormattedContent = (rawText: string) => {
     const lines = rawText.split('\n');
     const elements: React.ReactNode[] = [];
     let inTable = false;
     let tableRows: string[][] = [];
     let tableHeaders: string[] = [];
+    let inCodeBlock = false;
+    let codeLines: string[] = [];
 
     const flushTable = () => {
       if (tableHeaders.length > 0 || tableRows.length > 0) {
@@ -93,7 +139,7 @@ export const LessonReader: React.FC<LessonReaderProps> = ({ module, onNavigateTo
               <thead>
                 <tr>
                   {tableHeaders.map((th, i) => (
-                    <th key={i}>{th.trim()}</th>
+                    <th key={i}>{formatInlineText(th.trim())}</th>
                   ))}
                 </tr>
               </thead>
@@ -102,7 +148,7 @@ export const LessonReader: React.FC<LessonReaderProps> = ({ module, onNavigateTo
                   <tr key={rIdx}>
                     {row.map((cell, cIdx) => (
                       <td key={cIdx}>
-                        {cell.trim().replace(/\*\*(.*?)\*\*/g, '$1')}
+                        {formatInlineText(cell.trim())}
                       </td>
                     ))}
                   </tr>
@@ -117,9 +163,71 @@ export const LessonReader: React.FC<LessonReaderProps> = ({ module, onNavigateTo
       tableHeaders = [];
     };
 
+    const flushCodeBlock = () => {
+      if (codeLines.length > 0) {
+        elements.push(
+          <div
+            key={`code-${elements.length}`}
+            style={{
+              background: 'var(--shironeri-silk)',
+              border: '1px solid var(--sakura-border)',
+              borderRadius: 'var(--radius-md)',
+              padding: '1rem 1.25rem',
+              margin: '1.25rem 0',
+              overflowX: 'auto',
+              fontFamily: 'monospace',
+              fontSize: '0.82rem',
+              color: 'var(--sumi-ink)',
+              lineHeight: 1.5,
+              whiteSpace: 'pre'
+            }}
+          >
+            {codeLines.join('\n')}
+          </div>
+        );
+      }
+      inCodeBlock = false;
+      codeLines = [];
+    };
+
     lines.forEach((line, idx) => {
       const trimmed = line.trim();
 
+      // Code blocks (```)
+      if (trimmed.startsWith('```')) {
+        if (inCodeBlock) {
+          flushCodeBlock();
+        } else {
+          if (inTable) flushTable();
+          inCodeBlock = true;
+          codeLines = [];
+        }
+        return;
+      }
+
+      if (inCodeBlock) {
+        codeLines.push(line);
+        return;
+      }
+
+      // Horizontal dividers (---)
+      if (trimmed === '---' || trimmed === '***') {
+        if (inTable) flushTable();
+        elements.push(
+          <hr
+            key={`hr-${idx}`}
+            style={{
+              border: 'none',
+              height: '1px',
+              background: 'var(--sakura-border)',
+              margin: '1.5rem 0'
+            }}
+          />
+        );
+        return;
+      }
+
+      // Tables (| Header | Header |)
       if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
         const parts = trimmed.split('|').slice(1, -1);
         if (parts.some((p) => p.includes('---'))) {
@@ -136,51 +244,134 @@ export const LessonReader: React.FC<LessonReaderProps> = ({ module, onNavigateTo
         flushTable();
       }
 
+      // Headings
       if (trimmed.startsWith('### ')) {
+        const titleText = trimmed.replace('### ', '');
         elements.push(
-          <h3 key={idx} style={{ fontFamily: 'var(--font-serif)', marginTop: '1.6rem', marginBottom: '0.75rem', color: 'var(--sumi-ink)' }}>
-            {trimmed.replace('### ', '')}
+          <h3
+            key={idx}
+            style={{
+              fontFamily: 'var(--font-serif)',
+              fontSize: '1.35rem',
+              fontWeight: 600,
+              marginTop: '1.8rem',
+              marginBottom: '0.85rem',
+              color: 'var(--sumi-ink)',
+              letterSpacing: '0.02em',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.6rem'
+            }}
+          >
+            <span style={{ width: '4px', height: '1.1rem', background: 'var(--nadeshiko-rose)', borderRadius: '2px', display: 'inline-block' }} />
+            {formatInlineText(titleText)}
           </h3>
         );
       } else if (trimmed.startsWith('#### ')) {
+        const titleText = trimmed.replace('#### ', '');
         elements.push(
-          <h4 key={idx} style={{ fontFamily: 'var(--font-sans)', marginTop: '1.25rem', marginBottom: '0.5rem', color: 'var(--nadeshiko-dark)' }}>
-            {trimmed.replace('#### ', '')}
+          <h4
+            key={idx}
+            style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: '1.05rem',
+              fontWeight: 600,
+              marginTop: '1.4rem',
+              marginBottom: '0.66rem',
+              color: 'var(--nadeshiko-dark)',
+              letterSpacing: '0.01em'
+            }}
+          >
+            {formatInlineText(titleText)}
           </h4>
         );
       } else if (trimmed.startsWith('##### ')) {
+        const titleText = trimmed.replace('##### ', '');
         elements.push(
-          <h5 key={idx} style={{ marginTop: '1rem', marginBottom: '0.35rem', color: 'var(--sumi-light)', fontWeight: 600 }}>
-            {trimmed.replace('##### ', '')}
+          <h5
+            key={idx}
+            style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: '0.92rem',
+              fontWeight: 600,
+              marginTop: '1.1rem',
+              marginBottom: '0.4rem',
+              color: 'var(--sumi-light)'
+            }}
+          >
+            {formatInlineText(titleText)}
           </h5>
         );
       } else if (trimmed.startsWith('> ')) {
+        const quoteText = trimmed.replace(/^>\s*/, '');
         elements.push(
-          <blockquote key={idx}>
-            {trimmed.replace('> ', '')}
+          <blockquote
+            key={idx}
+            style={{
+              borderLeft: '3px solid var(--nadeshiko-rose)',
+              background: 'var(--sakura-mist)',
+              padding: '0.85rem 1.1rem',
+              margin: '1.25rem 0',
+              borderRadius: '0 var(--radius-sm) var(--radius-sm) 0',
+              color: 'var(--sumi-ink)',
+              fontStyle: 'italic',
+              fontSize: '0.95rem',
+              lineHeight: 1.7
+            }}
+          >
+            {formatInlineText(quoteText)}
           </blockquote>
         );
       } else if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
         const itemText = trimmed.substring(2);
         elements.push(
-          <li key={idx} style={{ marginLeft: '1.25rem', marginBottom: '0.4rem', color: 'var(--sumi-ink)' }}>
-            {itemText}
+          <li
+            key={idx}
+            style={{
+              marginLeft: '1.25rem',
+              marginBottom: '0.45rem',
+              color: 'var(--sumi-ink)',
+              lineHeight: 1.75
+            }}
+          >
+            {formatInlineText(itemText)}
           </li>
         );
-      } else if (trimmed.startsWith('```') || trimmed === '---') {
-        return;
+      } else if (/^\d+\.\s/.test(trimmed)) {
+        // Numbered list items (e.g. "1. INSPECT...")
+        const itemText = trimmed.replace(/^\d+\.\s/, '');
+        elements.push(
+          <li
+            key={idx}
+            style={{
+              marginLeft: '1.25rem',
+              marginBottom: '0.45rem',
+              color: 'var(--sumi-ink)',
+              lineHeight: 1.75
+            }}
+          >
+            {formatInlineText(itemText)}
+          </li>
+        );
       } else if (trimmed.length > 0) {
         elements.push(
-          <p key={idx} style={{ marginBottom: '0.85rem', color: 'var(--sumi-ink)', lineHeight: 1.8 }}>
-            {trimmed}
+          <p
+            key={idx}
+            style={{
+              marginBottom: '0.95rem',
+              color: 'var(--sumi-ink)',
+              lineHeight: 1.8,
+              fontSize: '1rem'
+            }}
+          >
+            {formatInlineText(trimmed)}
           </p>
         );
       }
     });
 
-    if (inTable) {
-      flushTable();
-    }
+    if (inTable) flushTable();
+    if (inCodeBlock) flushCodeBlock();
 
     return elements;
   };
