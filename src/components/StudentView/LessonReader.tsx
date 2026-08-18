@@ -227,6 +227,58 @@ export const LessonReader: React.FC<LessonReaderProps> = ({ module, onNavigateTo
         return;
       }
 
+      // Markdown Images: ![Caption](/images/human_body/...)
+      const imgMatch = trimmed.match(/^!\[(.*?)\]\((.*?)\)$/);
+      if (imgMatch) {
+        if (inTable) flushTable();
+        const altText = imgMatch[1];
+        const imgSrc = imgMatch[2];
+        elements.push(
+          <div
+            key={`img-${idx}`}
+            style={{
+              margin: '1.75rem 0',
+              textAlign: 'center',
+              background: 'var(--gofun-white)',
+              border: '1px solid var(--sakura-border)',
+              borderRadius: 'var(--radius-md)',
+              padding: '1rem',
+              boxShadow: 'var(--shadow-subtle)'
+            }}
+          >
+            <img
+              src={imgSrc}
+              alt={altText}
+              style={{
+                maxWidth: '100%',
+                height: 'auto',
+                borderRadius: 'var(--radius-sm)',
+                display: 'block',
+                margin: '0 auto',
+                maxHeight: '480px',
+                objectFit: 'contain'
+              }}
+              loading="lazy"
+            />
+            {altText && (
+              <p
+                style={{
+                  fontSize: '0.8rem',
+                  color: 'var(--hai-slate)',
+                  marginTop: '0.75rem',
+                  marginBottom: 0,
+                  fontStyle: 'italic',
+                  letterSpacing: '0.01em'
+                }}
+              >
+                {altText}
+              </p>
+            )}
+          </div>
+        );
+        return;
+      }
+
       // Tables (| Header | Header |)
       if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
         const parts = trimmed.split('|').slice(1, -1);

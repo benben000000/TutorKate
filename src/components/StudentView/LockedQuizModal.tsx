@@ -275,8 +275,120 @@ export const LockedQuizModal: React.FC = () => {
             </div>
           )}
 
-          {/* Essay Format */}
-          {currentQ.type === 'essay' && (
+          {/* Diagram Labeling Format */}
+          {currentQ.type === 'diagram_label' && currentQ.diagramUrl && currentQ.diagramLabels && (
+            <div>
+              <div
+                style={{
+                  textAlign: 'center',
+                  background: 'var(--shironeri-silk)',
+                  border: '1px solid var(--sakura-border)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '0.75rem',
+                  marginBottom: '1rem'
+                }}
+              >
+                <img
+                  src={currentQ.diagramUrl}
+                  alt={currentQ.diagramTitle || 'Anatomical Diagram'}
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '320px',
+                    borderRadius: 'var(--radius-sm)',
+                    display: 'block',
+                    margin: '0 auto',
+                    objectFit: 'contain'
+                  }}
+                />
+                {currentQ.diagramTitle && (
+                  <div style={{ fontSize: '0.75rem', color: 'var(--hai-slate)', fontStyle: 'italic', marginTop: '0.4rem' }}>
+                    {currentQ.diagramTitle}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--sumi-ink)', marginBottom: '0.5rem' }}>
+                Select matching anatomical label for each pointer:
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                {currentQ.diagramLabels.map((dl) => {
+                  const currentVal = (answers[currentQ.id] as Record<string, string>)?.[dl.id] || '';
+
+                  return (
+                    <div
+                      key={dl.id}
+                      style={{
+                        background: 'var(--gofun-white)',
+                        padding: '0.65rem 0.85rem',
+                        borderRadius: 'var(--radius-sm)',
+                        border: '1px solid var(--sakura-border)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.3rem'
+                      }}
+                    >
+                      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--nadeshiko-dark)' }}>
+                        Pointer {dl.labelNumber}: {dl.targetName}
+                      </div>
+
+                      {dl.options ? (
+                        <select
+                          value={currentVal}
+                          onChange={(e) => {
+                            const prevLabels = (answers[currentQ.id] as Record<string, string>) || {};
+                            setAnswers((prev) => ({
+                              ...prev,
+                              [currentQ.id]: {
+                                ...prevLabels,
+                                [dl.id]: e.target.value
+                              }
+                            }));
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '0.5rem',
+                            borderRadius: 'var(--radius-sm)',
+                            border: '1px solid var(--hai-border)',
+                            background: 'var(--shironeri-silk)',
+                            fontSize: '0.84rem',
+                            color: 'var(--sumi-ink)',
+                            outline: 'none'
+                          }}
+                        >
+                          <option value="">-- Select matching label --</option>
+                          {dl.options.map((opt, oIdx) => (
+                            <option key={oIdx} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          placeholder="Type anatomical label..."
+                          value={currentVal}
+                          onChange={(e) => {
+                            const prevLabels = (answers[currentQ.id] as Record<string, string>) || {};
+                            setAnswers((prev) => ({
+                              ...prev,
+                              [currentQ.id]: {
+                                ...prevLabels,
+                                [dl.id]: e.target.value
+                              }
+                            }));
+                          }}
+                          className="minimal-input"
+                          style={{ fontSize: '0.84rem', padding: '0.45rem 0.75rem' }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Essay & Socratic Format */}
+          {(currentQ.type === 'essay' || currentQ.type === 'socratic') && (
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--sumi-light)', marginBottom: '0.4rem' }}>
                 Your Clinical & Theoretical Reasoning:

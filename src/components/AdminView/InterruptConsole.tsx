@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useWebSocket } from '../../context/WebSocketContext';
 import { QUESTION_BANK_100 } from '../../data/question_bank_100';
+import { HUMAN_BODY_QUESTION_BANK } from '../../data/question_bank_human_body';
 import { QUESTION_BANK } from '../../data/question_bank';
 import { LearningTechnique, QuestionBankItem, QuizTier, ComprehensiveQuizQuestion } from '../../types';
-import { Send, XCircle, Sparkles, Key } from 'lucide-react';
+import { Send, XCircle, Sparkles, Key, BookOpen, Layers } from 'lucide-react';
 
 export const InterruptConsole: React.FC = () => {
   const {
@@ -15,7 +16,7 @@ export const InterruptConsole: React.FC = () => {
     dismissLockedQuiz
   } = useWebSocket();
 
-  const [activeConsoleTab, setActiveConsoleTab] = useState<'interrupts' | 'quiz_dispatch' | 'answer_keys'>('quiz_dispatch');
+  const [activeConsoleTab, setActiveConsoleTab] = useState<'quiz_dispatch' | 'interrupts' | 'answer_keys'>('quiz_dispatch');
 
   // Interrupt state
   const [selectedTechnique, setSelectedTechnique] = useState<LearningTechnique>('socratic');
@@ -27,9 +28,12 @@ export const InterruptConsole: React.FC = () => {
   const [isCustomMode, setIsCustomMode] = useState(false);
 
   // Quiz Dispatcher state
+  const [dispatchModule, setDispatchModule] = useState<'human_body' | 'lab_safety'>('human_body');
+  const [dispatchPart, setDispatchPart] = useState<1 | 2 | 3 | 'final'>(1);
   const [dispatchTier, setDispatchTier] = useState<QuizTier>(10);
-  const [quizFilterCategory, setQuizFilterCategory] = useState<string>('All');
-  const [inspectedQuestion, setInspectedQuestion] = useState<ComprehensiveQuizQuestion | null>(QUESTION_BANK_100[0]);
+  const [answerKeyModule, setAnswerKeyModule] = useState<'human_body' | 'lab_safety'>('human_body');
+  const [answerKeyCategory, setAnswerKeyCategory] = useState<string>('All');
+  const [inspectedQuestion, setInspectedQuestion] = useState<ComprehensiveQuizQuestion | null>(HUMAN_BODY_QUESTION_BANK[0]);
 
   const availableInterruptQuestions = QUESTION_BANK.filter((q) => q.technique === selectedTechnique);
 
@@ -49,7 +53,7 @@ export const InterruptConsole: React.FC = () => {
         technique: 'custom',
         title: customTitle.trim() || 'Tutor Live Challenge',
         prompt: customPrompt.trim(),
-        context: 'Live Lab Session',
+        context: 'Live Anatomy Session',
         guide: 'Tutor live custom evaluation',
         triggerSource: 'admin',
         required: true
@@ -68,28 +72,50 @@ export const InterruptConsole: React.FC = () => {
     }
   };
 
-  const handleDispatchQuizToKate = (tier: QuizTier) => {
-    const questionsPool = QUESTION_BANK_100.filter((q) => {
-      if (quizFilterCategory === 'All') return true;
-      return q.category === quizFilterCategory;
-    });
+  const handleDispatchHumanBodyQuiz = (part: 1 | 2 | 3 | 'final') => {
+    let questions: ComprehensiveQuizQuestion[] = [];
+    let title = '';
 
-    const shuffled = [...questionsPool].sort(() => Math.random() - 0.5);
-    const selectedQuestions = shuffled.slice(0, Math.min(tier, shuffled.length));
+    if (part === 1) {
+      questions = HUMAN_BODY_QUESTION_BANK.filter((q) => q.partNumber === 1);
+      title = 'ANPH111 Part 1 Quiz: Foundations, 6 Levels & 11 Organ Systems (10 Items)';
+    } else if (part === 2) {
+      questions = HUMAN_BODY_QUESTION_BANK.filter((q) => q.partNumber === 2);
+      title = 'ANPH111 Part 2 Quiz: Homeostasis, Feedback Loops & Directional Terms (10 Items)';
+    } else if (part === 3) {
+      questions = HUMAN_BODY_QUESTION_BANK.filter((q) => q.partNumber === 3);
+      title = 'ANPH111 Part 3 Quiz: Body Regions, Quadrants, Planes & Cavities (10 Items)';
+    } else {
+      questions = HUMAN_BODY_QUESTION_BANK.filter((q) => q.partNumber === 'final');
+      title = 'ANPH111 Unit 1 Final Comprehensive Examination: The Human Body (30 Items)';
+    }
 
     triggerLockedQuiz({
-      tier,
-      title: `ANPH111 Laboratory Mastery Quiz (${tier} Questions)`,
-      questions: selectedQuestions,
+      tier: (questions.length as QuizTier) || 10,
+      title,
+      questions,
       triggeredBy: 'admin'
     });
   };
 
-  const categories = ['All', ...Array.from(new Set(QUESTION_BANK_100.map((q) => q.category)))];
+  const handleDispatchLabSafetyQuiz = (tier: QuizTier) => {
+    const shuffled = [...QUESTION_BANK_100].sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, Math.min(tier, shuffled.length));
 
-  const filtered100Bank = QUESTION_BANK_100.filter((q) => {
-    if (quizFilterCategory === 'All') return true;
-    return q.category === quizFilterCategory;
+    triggerLockedQuiz({
+      tier,
+      title: `ANPH111 Laboratory Safety Assessment (${tier} Items)`,
+      questions: selected,
+      triggeredBy: 'admin'
+    });
+  };
+
+  const currentAnswerKeyBank = answerKeyModule === 'human_body' ? HUMAN_BODY_QUESTION_BANK : QUESTION_BANK_100;
+  const categories = ['All', ...Array.from(new Set(currentAnswerKeyBank.map((q) => q.category)))];
+
+  const filteredAnswerKeys = currentAnswerKeyBank.filter((q) => {
+    if (answerKeyCategory === 'All') return true;
+    return q.category === answerKeyCategory;
   });
 
   return (
@@ -102,7 +128,7 @@ export const InterruptConsole: React.FC = () => {
           style={{ fontSize: '0.8rem', padding: '0.4rem 0.85rem' }}
         >
           <Sparkles size={14} />
-          <span>Dispatch Real-Time Quiz</span>
+          <span>Dispatch Real-Time Assessment</span>
         </button>
 
         <button
@@ -120,7 +146,7 @@ export const InterruptConsole: React.FC = () => {
           style={{ fontSize: '0.8rem', padding: '0.4rem 0.85rem' }}
         >
           <Key size={14} />
-          <span>100+ Answer Keys & Rubrics</span>
+          <span>Answer Keys & Rubrics ({currentAnswerKeyBank.length}+ Items)</span>
         </button>
       </div>
 
@@ -148,54 +174,173 @@ export const InterruptConsole: React.FC = () => {
             )}
           </div>
 
-          <p style={{ fontSize: '0.82rem', color: 'var(--hai-slate)', marginBottom: '1.25rem' }}>
-            Selecting a tier will instantly broadcast a locked assessment modal to Kate's screen. The modal will not close until she completes and submits her answers.
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.65rem', marginBottom: '1.5rem' }}>
-            {([10, 15, 20, 25, 50] as QuizTier[]).map((tier) => (
-              <button
-                key={tier}
-                onClick={() => setDispatchTier(tier)}
-                style={{
-                  padding: '0.85rem 0.75rem',
-                  borderRadius: 'var(--radius-sm)',
-                  background: dispatchTier === tier ? 'var(--sakura-soft)' : 'var(--shironeri-silk)',
-                  border: `1px solid ${dispatchTier === tier ? 'var(--nadeshiko-rose)' : 'var(--hai-border)'}`,
-                  textAlign: 'center',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: dispatchTier === tier ? 'var(--nadeshiko-dark)' : 'var(--sumi-ink)' }}>
-                  {tier} Items
-                </div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--hai-slate)', marginTop: '2px' }}>
-                  {tier === 10 ? 'Quick Drill' : tier === 15 ? 'Deep Check' : tier === 20 ? 'Clinical' : tier === 25 ? 'Sprint' : 'Final Exam'}
-                </div>
-              </button>
-            ))}
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--shironeri-silk)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--hai-border)' }}>
-            <div>
-              <div style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--sumi-ink)' }}>
-                Ready to Dispatch: {dispatchTier} Items Assessment
-              </div>
-              <div style={{ fontSize: '0.74rem', color: 'var(--hai-slate)' }}>
-                Drawn from the 100+ Question Bank with auto-scoring and rubric keys
-              </div>
-            </div>
+          {/* Module Selector */}
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
+            <button
+              className={dispatchModule === 'human_body' ? 'btn-primary' : 'btn-minimal'}
+              onClick={() => setDispatchModule('human_body')}
+              style={{ fontSize: '0.82rem', padding: '0.45rem 0.85rem' }}
+            >
+              <BookOpen size={14} />
+              <span>Unit 1: The Human Body (Lecture)</span>
+            </button>
 
             <button
-              className="btn-primary"
-              onClick={() => handleDispatchQuizToKate(dispatchTier)}
-              style={{ padding: '0.6rem 1.4rem' }}
+              className={dispatchModule === 'lab_safety' ? 'btn-primary' : 'btn-minimal'}
+              onClick={() => setDispatchModule('lab_safety')}
+              style={{ fontSize: '0.82rem', padding: '0.45rem 0.85rem' }}
             >
-              <Sparkles size={14} />
-              <span>Launch Quiz on Kate's Screen</span>
+              <Layers size={14} />
+              <span>Week 1: Lab Safety (Laboratory)</span>
             </button>
           </div>
+
+          {/* Human Body Part Quizzes & Final Exam Dispatcher */}
+          {dispatchModule === 'human_body' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
+                <div
+                  style={{
+                    background: dispatchPart === 1 ? 'var(--sakura-soft)' : 'var(--shironeri-silk)',
+                    border: `1px solid ${dispatchPart === 1 ? 'var(--nadeshiko-rose)' : 'var(--hai-border)'}`,
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.85rem',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => setDispatchPart(1)}
+                >
+                  <div style={{ fontSize: '0.75rem', color: '#4CAF50', fontWeight: 600 }}>PART 1 (10 Items)</div>
+                  <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--sumi-ink)', marginTop: '2px' }}>
+                    Foundations & 11 Systems
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--hai-slate)', marginTop: '4px' }}>
+                    Includes 6 structural levels diagrams
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    background: dispatchPart === 2 ? 'var(--sakura-soft)' : 'var(--shironeri-silk)',
+                    border: `1px solid ${dispatchPart === 2 ? 'var(--nadeshiko-rose)' : 'var(--hai-border)'}`,
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.85rem',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => setDispatchPart(2)}
+                >
+                  <div style={{ fontSize: '0.75rem', color: '#2196F3', fontWeight: 600 }}>PART 2 (10 Items)</div>
+                  <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--sumi-ink)', marginTop: '2px' }}>
+                    Homeostasis & Directional Terms
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--hai-slate)', marginTop: '4px' }}>
+                    Includes feedback loop diagrams
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    background: dispatchPart === 3 ? 'var(--sakura-soft)' : 'var(--shironeri-silk)',
+                    border: `1px solid ${dispatchPart === 3 ? 'var(--nadeshiko-rose)' : 'var(--hai-border)'}`,
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.85rem',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => setDispatchPart(3)}
+                >
+                  <div style={{ fontSize: '0.75rem', color: '#9C27B0', fontWeight: 600 }}>PART 3 (10 Items)</div>
+                  <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--sumi-ink)', marginTop: '2px' }}>
+                    Regions, Planes & Cavities
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--hai-slate)', marginTop: '4px' }}>
+                    Includes abdominal quadrants & planes
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    background: dispatchPart === 'final' ? 'var(--sakura-soft)' : 'var(--shironeri-silk)',
+                    border: `2px solid ${dispatchPart === 'final' ? 'var(--nadeshiko-rose)' : 'var(--sakura-border)'}`,
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.85rem',
+                    cursor: 'pointer',
+                    gridColumn: '1 / -1'
+                  }}
+                  onClick={() => setDispatchPart('final')}
+                >
+                  <div style={{ fontSize: '0.78rem', color: 'var(--nadeshiko-dark)', fontWeight: 700 }}>🏆 FINAL EXAM (30 ITEMS)</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--sumi-ink)', marginTop: '2px' }}>
+                    Comprehensive Mastery Exam: The Human Body
+                  </div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--hai-slate)', marginTop: '4px' }}>
+                    Diverse exam methods: MCQs, Diagram Fill-in, Enumeration, Socratic, and Clinical Essays.
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--shironeri-silk)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--hai-border)' }}>
+                <div>
+                  <div style={{ fontSize: '0.86rem', fontWeight: 600, color: 'var(--sumi-ink)' }}>
+                    Ready to Dispatch: {dispatchPart === 'final' ? '30-Item Final Exam' : `Part ${dispatchPart} Quiz (10 Items)`}
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--hai-slate)' }}>
+                    Will pop up on Kate's phone/screen in real-time until completed
+                  </div>
+                </div>
+
+                <button
+                  className="btn-primary"
+                  onClick={() => handleDispatchHumanBodyQuiz(dispatchPart)}
+                  style={{ padding: '0.6rem 1.4rem' }}
+                >
+                  <Sparkles size={14} />
+                  <span>Lock & Dispatch to Kate</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Lab Safety Dispatcher */}
+          {dispatchModule === 'lab_safety' && (
+            <div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                {([10, 15, 20, 25, 50] as QuizTier[]).map((tier) => (
+                  <button
+                    key={tier}
+                    onClick={() => setDispatchTier(tier)}
+                    style={{
+                      padding: '0.75rem',
+                      borderRadius: 'var(--radius-sm)',
+                      background: dispatchTier === tier ? 'var(--sakura-soft)' : 'var(--shironeri-silk)',
+                      border: `1px solid ${dispatchTier === tier ? 'var(--nadeshiko-rose)' : 'var(--hai-border)'}`,
+                      textAlign: 'center',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <div style={{ fontSize: '1.15rem', fontWeight: 700, color: dispatchTier === tier ? 'var(--nadeshiko-dark)' : 'var(--sumi-ink)' }}>
+                      {tier}Q
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--shironeri-silk)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--hai-border)' }}>
+                <div>
+                  <div style={{ fontSize: '0.86rem', fontWeight: 600, color: 'var(--sumi-ink)' }}>
+                    Ready to Dispatch: {dispatchTier} Items Safety Drill
+                  </div>
+                </div>
+
+                <button
+                  className="btn-primary"
+                  onClick={() => handleDispatchLabSafetyQuiz(dispatchTier)}
+                  style={{ padding: '0.6rem 1.4rem' }}
+                >
+                  <Sparkles size={14} />
+                  <span>Dispatch Safety Quiz</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -223,7 +368,6 @@ export const InterruptConsole: React.FC = () => {
             )}
           </div>
 
-          {/* Technique Tabs */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem', marginBottom: '1.25rem' }}>
             {(['socratic', 'feynman', 'recall', 'clinical', 'spot_mistake'] as LearningTechnique[]).map((tech) => {
               const isSelected = selectedTechnique === tech && !isCustomMode;
@@ -262,11 +406,28 @@ export const InterruptConsole: React.FC = () => {
                 color: isCustomMode ? 'var(--nadeshiko-dark)' : 'var(--sumi-ink)'
               }}
             >
-              Custom Challenge
+              ✍️ Custom Challenge
             </button>
           </div>
 
-          {!isCustomMode ? (
+          {isCustomMode ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.25rem' }}>
+              <input
+                type="text"
+                placeholder="Checkpoint Title (e.g. Real-Time Anatomy Checkpoint)"
+                value={customTitle}
+                onChange={(e) => setCustomTitle(e.target.value)}
+                className="minimal-input"
+              />
+              <textarea
+                placeholder="Type your real-time challenge question for Kate..."
+                rows={4}
+                value={customPrompt}
+                onChange={(e) => setCustomPrompt(e.target.value)}
+                className="minimal-textarea"
+              />
+            </div>
+          ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
               {availableInterruptQuestions.map((q) => {
                 const isSelected = selectedQuestion?.id === q.id;
@@ -275,152 +436,175 @@ export const InterruptConsole: React.FC = () => {
                     key={q.id}
                     onClick={() => setSelectedQuestion(q)}
                     style={{
-                      padding: '0.75rem 1rem',
+                      padding: '0.85rem',
                       borderRadius: 'var(--radius-sm)',
-                      background: isSelected ? 'var(--sakura-mist)' : 'var(--gofun-white)',
-                      border: `1px solid ${isSelected ? 'var(--sakura-border-hover)' : 'var(--hai-border)'}`,
+                      background: isSelected ? 'var(--sakura-soft)' : 'var(--gofun-white)',
+                      border: `1px solid ${isSelected ? 'var(--nadeshiko-rose)' : 'var(--sakura-border)'}`,
                       cursor: 'pointer'
                     }}
                   >
-                    <div style={{ fontWeight: 600, fontSize: '0.86rem', color: isSelected ? 'var(--nadeshiko-dark)' : 'var(--sumi-ink)' }}>
-                      {q.title}
+                    <div style={{ fontSize: '0.75rem', color: 'var(--nadeshiko-dark)', fontWeight: 600, marginBottom: '2px' }}>
+                      {q.context}
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--sumi-light)', marginTop: '2px' }}>
+                    <div style={{ fontSize: '0.86rem', color: 'var(--sumi-ink)', fontWeight: 500 }}>
                       {q.prompt}
                     </div>
                   </div>
                 );
               })}
             </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.25rem' }}>
-              <input
-                type="text"
-                className="minimal-input"
-                value={customTitle}
-                onChange={(e) => setCustomTitle(e.target.value)}
-                placeholder="Title e.g. Socratic: Why 15 minutes for eye flush?"
-              />
-              <textarea
-                className="minimal-textarea"
-                rows={3}
-                value={customPrompt}
-                onChange={(e) => setCustomPrompt(e.target.value)}
-                placeholder="Type your challenge question for Kate..."
-              />
-            </div>
           )}
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <button
-              className="btn-primary"
-              onClick={handleDispatchInterrupt}
-              disabled={isCustomMode ? !customPrompt.trim() : !selectedQuestion}
-            >
-              <Send size={14} />
-              <span>Send Socratic Interrupt</span>
-            </button>
-          </div>
+          <button
+            className="btn-primary"
+            onClick={handleDispatchInterrupt}
+            style={{ width: '100%', padding: '0.75rem' }}
+          >
+            <Send size={15} />
+            <span>Send Pop-up to Kate's Screen</span>
+          </button>
         </div>
       )}
 
       {/* 3. ANSWER KEYS & RUBRICS TAB */}
       {activeConsoleTab === 'answer_keys' && (
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
             <div>
-              <span className="category-tag">100+ Question Bank</span>
+              <span className="category-tag">Instructor Reference Portal</span>
               <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.3rem', fontWeight: 600, color: 'var(--sumi-ink)', marginTop: '2px' }}>
-                Master Answer Key & Rubrics
+                Complete Course Answer Keys & Diagram Rubrics
               </h2>
             </div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--hai-slate)' }}>{filtered100Bank.length} Questions</span>
+
+            {/* Switch question bank */}
+            <div style={{ display: 'flex', gap: '0.35rem' }}>
+              <button
+                className={answerKeyModule === 'human_body' ? 'btn-primary' : 'btn-minimal'}
+                onClick={() => {
+                  setAnswerKeyModule('human_body');
+                  setAnswerKeyCategory('All');
+                  setInspectedQuestion(HUMAN_BODY_QUESTION_BANK[0]);
+                }}
+                style={{ fontSize: '0.75rem', padding: '0.3rem 0.65rem' }}
+              >
+                Unit 1: The Human Body ({HUMAN_BODY_QUESTION_BANK.length})
+              </button>
+              <button
+                className={answerKeyModule === 'lab_safety' ? 'btn-primary' : 'btn-minimal'}
+                onClick={() => {
+                  setAnswerKeyModule('lab_safety');
+                  setAnswerKeyCategory('All');
+                  setInspectedQuestion(QUESTION_BANK_100[0]);
+                }}
+                style={{ fontSize: '0.75rem', padding: '0.3rem 0.65rem' }}
+              >
+                Lab Safety Bank ({QUESTION_BANK_100.length})
+              </button>
+            </div>
           </div>
 
           {/* Category Filter Chips */}
-          <div className="section-chips-scroller" style={{ marginBottom: '1rem' }}>
-            {categories.map((c) => (
+          <div style={{ display: 'flex', gap: '0.4rem', overflowX: 'auto', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
+            {categories.map((cat) => (
               <button
-                key={c}
-                className={`section-chip-btn ${quizFilterCategory === c ? 'active' : ''}`}
-                onClick={() => setQuizFilterCategory(c)}
-                style={{ fontSize: '0.74rem', padding: '0.3rem 0.65rem' }}
+                key={cat}
+                onClick={() => setAnswerKeyCategory(cat)}
+                style={{
+                  padding: '0.3rem 0.65rem',
+                  borderRadius: 'var(--radius-pill)',
+                  background: answerKeyCategory === cat ? 'var(--nadeshiko-dark)' : 'var(--shironeri-silk)',
+                  color: answerKeyCategory === cat ? '#FFF' : 'var(--sumi-light)',
+                  border: '1px solid var(--hai-border)',
+                  fontSize: '0.74rem',
+                  whiteSpace: 'nowrap',
+                  cursor: 'pointer'
+                }}
               >
-                <span>{c}</span>
+                {cat}
               </button>
             ))}
           </div>
 
-          {/* Question List & Answer Inspector */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
-            <div style={{ maxHeight: '420px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {filtered100Bank.map((q, idx) => {
+          {/* 2-Column Inspector Layout */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 1fr) minmax(320px, 1.4fr)', gap: '1rem', minHeight: '380px' }}>
+            {/* List */}
+            <div style={{ maxHeight: '450px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem', borderRight: '1px solid var(--sakura-border)', paddingRight: '0.5rem' }}>
+              {filteredAnswerKeys.map((q, idx) => {
                 const isSelected = inspectedQuestion?.id === q.id;
                 return (
-                  <button
+                  <div
                     key={q.id}
                     onClick={() => setInspectedQuestion(q)}
                     style={{
-                      padding: '0.65rem 0.85rem',
+                      padding: '0.65rem 0.75rem',
                       borderRadius: 'var(--radius-sm)',
-                      background: isSelected ? 'var(--sakura-soft)' : 'var(--shironeri-silk)',
-                      border: `1px solid ${isSelected ? 'var(--nadeshiko-rose)' : 'var(--hai-border)'}`,
-                      textAlign: 'left',
+                      background: isSelected ? 'var(--sakura-soft)' : 'var(--gofun-white)',
+                      border: `1px solid ${isSelected ? 'var(--nadeshiko-rose)' : 'var(--sakura-border)'}`,
                       cursor: 'pointer'
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                      <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--nadeshiko-dark)' }}>
-                        Q{idx + 1} • {q.type.replace('_', ' ')}
-                      </span>
-                      <span style={{ fontSize: '0.68rem', color: 'var(--hai-slate)' }}>{q.difficulty}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--hai-slate)', marginBottom: '2px' }}>
+                      <span>Item {idx + 1}</span>
+                      <span style={{ textTransform: 'capitalize', color: 'var(--nadeshiko-dark)', fontWeight: 600 }}>{q.type.replace('_', ' ')}</span>
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--sumi-ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {q.question}
+                    <div style={{ fontSize: '0.82rem', color: 'var(--sumi-ink)', fontWeight: 500, lineHeight: 1.35 }}>
+                      {q.question.length > 70 ? q.question.substring(0, 70) + '...' : q.question}
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
 
-            {/* Inspected Key Details */}
+            {/* Detail View */}
             {inspectedQuestion && (
-              <div style={{ background: '#FFFFFF', border: '1px solid var(--sakura-border-hover)', borderRadius: 'var(--radius-sm)', padding: '1.15rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <span className="category-tag">{inspectedQuestion.category}</span>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--hai-slate)', textTransform: 'uppercase', fontWeight: 600 }}>
-                    {inspectedQuestion.type.replace('_', ' ')}
-                  </span>
-                </div>
-
-                <h4 style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--sumi-ink)', marginBottom: '0.85rem', lineHeight: 1.45 }}>
+              <div style={{ padding: '0.5rem', maxHeight: '450px', overflowY: 'auto' }}>
+                <span className="category-tag" style={{ marginBottom: '0.5rem' }}>
+                  {inspectedQuestion.category} • {inspectedQuestion.difficulty.toUpperCase()}
+                </span>
+                <h4 style={{ fontSize: '0.98rem', fontWeight: 600, color: 'var(--sumi-ink)', lineHeight: 1.45, marginBottom: '0.75rem' }}>
                   {inspectedQuestion.question}
                 </h4>
 
-                {/* Model Answer Key */}
-                <div style={{ background: 'rgba(76, 175, 80, 0.08)', border: '1px solid rgba(76, 175, 80, 0.3)', borderRadius: 'var(--radius-sm)', padding: '0.75rem', marginBottom: '0.75rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', fontWeight: 600, color: '#2E7D32', marginBottom: '0.25rem' }}>
-                    <Key size={13} />
-                    <span>Official Answer Key:</span>
+                {/* Diagram Preview if applicable */}
+                {inspectedQuestion.diagramUrl && (
+                  <div style={{ textAlign: 'center', marginBottom: '1rem', background: 'var(--shironeri-silk)', padding: '0.5rem', borderRadius: 'var(--radius-sm)' }}>
+                    <img
+                      src={inspectedQuestion.diagramUrl}
+                      alt="Diagram"
+                      style={{ maxHeight: '180px', maxWidth: '100%', objectFit: 'contain' }}
+                    />
+                    <div style={{ fontSize: '0.72rem', color: 'var(--hai-slate)', marginTop: '4px' }}>
+                      {inspectedQuestion.diagramTitle}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '0.82rem', color: '#1B5E20', lineHeight: 1.5, whiteSpace: 'pre-line' }}>
+                )}
+
+                <div style={{ background: 'rgba(76, 175, 80, 0.08)', border: '1px solid #4CAF50', borderRadius: 'var(--radius-sm)', padding: '0.75rem', marginBottom: '0.75rem' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#2E7D32', marginBottom: '0.2rem' }}>
+                    ✓ Official Model Answer / Key:
+                  </div>
+                  <div style={{ fontSize: '0.84rem', color: 'var(--sumi-ink)', lineHeight: 1.45 }}>
                     {inspectedQuestion.modelAnswer}
                   </div>
                 </div>
 
-                {/* Rubric Guide for Tutor */}
                 <div style={{ background: 'var(--sakura-mist)', border: '1px solid var(--sakura-border)', borderRadius: 'var(--radius-sm)', padding: '0.75rem', marginBottom: '0.75rem' }}>
-                  <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--nadeshiko-dark)', marginBottom: '0.25rem' }}>
-                    Grading Rubric Guide:
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--nadeshiko-dark)', marginBottom: '0.2rem' }}>
+                    📋 Grading Rubric Guidelines:
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--sumi-ink)', lineHeight: 1.45 }}>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--sumi-light)', lineHeight: 1.45 }}>
                     {inspectedQuestion.rubricGuide}
                   </div>
                 </div>
 
-                {/* Socratic Clue */}
-                <div style={{ fontSize: '0.78rem', color: 'var(--hai-slate)', fontStyle: 'italic' }}>
-                  💡 Socratic Clue for Kate (shown if wrong): "{inspectedQuestion.socraticClue}"
+                <div style={{ background: 'var(--shironeri-silk)', border: '1px solid var(--hai-border)', borderRadius: 'var(--radius-sm)', padding: '0.75rem' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--hai-slate)', marginBottom: '0.2rem' }}>
+                    💡 Socratic Clue for Kate:
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--sumi-ink)', lineHeight: 1.45 }}>
+                    {inspectedQuestion.socraticClue}
+                  </div>
                 </div>
               </div>
             )}

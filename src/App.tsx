@@ -8,7 +8,7 @@ import { Header } from './components/Header';
 import { BottomNavBar } from './components/BottomNavBar';
 import { StudentDashboard } from './components/StudentView/StudentDashboard';
 import { AdminDashboard } from './components/AdminView/AdminDashboard';
-import { courseData } from './data/lessons/week1_anph111';
+import { defaultCourseData } from './data/lessons';
 import './styles/theme.css';
 
 const MainApp: React.FC = () => {
@@ -60,13 +60,13 @@ const MainApp: React.FC = () => {
         <main style={{ flex: 1, paddingBottom: '1rem' }}>
           {user?.role === 'admin' ? (
             <AdminDashboard
-              course={courseData}
+              course={defaultCourseData}
               activeTab={activeTab}
               setActiveTab={setActiveTab}
             />
           ) : (
             <StudentDashboard
-              course={courseData}
+              course={defaultCourseData}
               activeTab={activeTab}
               setActiveTab={setActiveTab}
             />

@@ -16,13 +16,24 @@ export type LearningTechnique =
   | 'spot_mistake'
   | 'custom';
 
-export type QuestionFormat = 'multiple_choice' | 'enumeration' | 'essay';
+export type QuestionFormat = 'multiple_choice' | 'enumeration' | 'essay' | 'diagram_label' | 'socratic';
 export type QuestionDifficulty = 'easy' | 'medium' | 'hard' | 'practical';
-export type QuizTier = 10 | 15 | 20 | 25 | 50;
+export type QuizTier = 10 | 15 | 20 | 25 | 30 | 50;
+
+export interface DiagramLabelItem {
+  id: string;
+  labelNumber: number | string; // Pointer number (e.g. 1, 2, 3 or A, B, C)
+  targetName: string; // The anatomical structure being pointed to
+  correctAnswer: string;
+  options?: string[]; // Multiple choice options for this pointer
+  acceptableAnswers?: string[]; // Variations/synonyms
+  hint?: string;
+}
 
 export interface ComprehensiveQuizQuestion {
   id: string;
   moduleId: string;
+  partNumber?: 1 | 2 | 3 | 'final';
   type: QuestionFormat;
   difficulty: QuestionDifficulty;
   category: string;
@@ -32,6 +43,9 @@ export interface ComprehensiveQuizQuestion {
   correctItems?: string[]; // For enumeration
   enumerationCount?: number; // Expected items
   keywords?: string[]; // Key conceptual terms
+  diagramUrl?: string; // Image URL for diagram labeling
+  diagramTitle?: string; // Title/caption of diagram
+  diagramLabels?: DiagramLabelItem[]; // Items to label in diagram
   modelAnswer: string; // Official Answer Key for Tutor
   rubricGuide: string; // Grading criteria for Tutor
   socraticClue: string; // Pedagogical explanation of why incorrect without giving answer
