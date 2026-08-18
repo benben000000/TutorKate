@@ -182,6 +182,7 @@ export interface LessonModule {
   description: string;
   estimatedMinutes: number;
   sections: LessonSection[];
+  flashcards?: any[];
   quiz: QuizQuestion[];
 }
 
