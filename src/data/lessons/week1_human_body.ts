@@ -570,5 +570,77 @@ The trunk cavities (pleural, pericardial, and peritoneal) are lined by continuou
       ]
     }
   ],
+  flashcards: [
+    {
+      id: 'hb_fc_1',
+      question: 'What is the fundamental difference between Anatomy and Physiology?',
+      answer: 'Anatomy is the scientific study of the bodily structures of living organisms and their physical relationships, whereas Physiology investigates the dynamic functions and biological processes of these structures.',
+      category: 'Foundations',
+      difficulty: 'easy'
+    },
+    {
+      id: 'hb_fc_2',
+      question: 'List the 6 structural levels of human body organization from simplest to most complex.',
+      answer: '1. Chemical Level -> 2. Cell Level -> 3. Tissue Level -> 4. Organ Level -> 5. Organ System Level -> 6. Organism Level.',
+      category: 'Structural Levels',
+      difficulty: 'easy'
+    },
+    {
+      id: 'hb_fc_3',
+      question: 'Name the 4 primary adult tissue classes in the human body.',
+      answer: '1. Epithelial Tissue, 2. Connective Tissue, 3. Muscle Tissue, 4. Nervous Tissue.',
+      category: 'Tissues',
+      difficulty: 'medium'
+    },
+    {
+      id: 'hb_fc_4',
+      question: 'Define Homeostasis and explain the concept of a set point.',
+      answer: 'Homeostasis is the active maintenance of a relatively stable internal environment despite external fluctuations. The set point is the ideal biological normal value (e.g. 37°C body temperature) around which variables fluctuate within a normal range.',
+      category: 'Homeostasis',
+      difficulty: 'medium'
+    },
+    {
+      id: 'hb_fc_5',
+      question: 'What are the 3 essential components of a negative feedback control system?',
+      answer: '1. Receptor (Sensor) detects deviation -> 2. Control Center (Brain/Spinal Cord) establishes set point and processes input -> 3. Effector (Muscle/Gland) generates response to reverse the deviation back toward normal.',
+      category: 'Feedback Loops',
+      difficulty: 'hard'
+    },
+    {
+      id: 'hb_fc_6',
+      question: 'Give a physiological example of positive feedback and explain why it must eventually terminate.',
+      answer: 'Childbirth (oxytocin-induced uterine contractions) or blood clotting cascade. It amplifies deviations away from the set point and must terminate upon completion of a finite goal (delivery of baby or stable clot formation).',
+      category: 'Feedback Loops',
+      difficulty: 'hard'
+    },
+    {
+      id: 'hb_fc_7',
+      question: 'Describe the anatomical position and distinguish between supine and prone stances.',
+      answer: 'Anatomical Position: Erect standing body facing forward, arms at sides, palms facing anteriorly (forward), thumbs pointed laterally. Supine: Lying face upward. Prone: Lying face downward.',
+      category: 'Terminology',
+      difficulty: 'easy'
+    },
+    {
+      id: 'hb_fc_8',
+      question: 'Differentiate between Proximal and Distal directional terms.',
+      answer: 'Proximal means closer to the point of limb attachment to the trunk. Distal means farther from the point of limb attachment to the trunk (e.g., wrist is distal to elbow; shoulder is proximal to wrist).',
+      category: 'Directional Terms',
+      difficulty: 'medium'
+    },
+    {
+      id: 'hb_fc_9',
+      question: 'Which anatomical plane divides the body into equal left and right halves?',
+      answer: 'The Midsagittal (Median) Plane. Parasagittal planes divide the body into unequal left and right portions.',
+      category: 'Body Planes',
+      difficulty: 'medium'
+    },
+    {
+      id: 'hb_fc_10',
+      question: 'Explain the difference between Parietal and Visceral serous membranes.',
+      answer: 'Parietal serosa lines the internal surface of the body cavity wall, whereas Visceral serosa directly covers and adheres to the external surface of the organs (viscera).',
+      category: 'Serous Membranes',
+      difficulty: 'medium'
+    }
+  ],
   quiz: [] // Populated via question_bank_human_body
 };
